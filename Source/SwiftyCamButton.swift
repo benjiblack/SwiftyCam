@@ -54,6 +54,8 @@ open class SwiftyCamButton: UIButton {
     
     public weak var delegate: SwiftyCamButtonDelegate?
     
+    public var videoEnabled = true
+    
     /// Maximum duration variable
     
     fileprivate var timer : Timer?
@@ -82,15 +84,17 @@ open class SwiftyCamButton: UIButton {
     /// UILongPressGestureRecognizer Function
 
     @objc fileprivate func LongPress(_ sender:UILongPressGestureRecognizer!)  {
-        switch sender.state {
-        case .began:
-            delegate?.buttonDidBeginLongPress()
-            startTimer()
-        case .cancelled, .ended, .changed, .failed:
-            invalidateTimer()
-            delegate?.buttonDidEndLongPress()
-        default:
-            break
+        if videoEnabled {
+            switch sender.state {
+            case .began:
+                delegate?.buttonDidBeginLongPress()
+                startTimer()
+            case .cancelled, .ended, .changed, .failed:
+                invalidateTimer()
+                delegate?.buttonDidEndLongPress()
+            default:
+                break
+            }
         }
     }
     
@@ -123,8 +127,10 @@ open class SwiftyCamButton: UIButton {
     
     fileprivate func createGestureRecognizers() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(SwiftyCamButton.Tap))
-        let longGesture = UILongPressGestureRecognizer(target: self, action: #selector(SwiftyCamButton.LongPress))
         self.addGestureRecognizer(tapGesture)
-        self.addGestureRecognizer(longGesture)
+        if videoEnabled {
+            let longGesture = UILongPressGestureRecognizer(target: self, action: #selector(SwiftyCamButton.LongPress))
+            self.addGestureRecognizer(longGesture)
+        }
     }
 }
