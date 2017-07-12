@@ -71,6 +71,17 @@ open class SwiftyCamViewController: UIViewController {
 		/// AVCaptureSessionPresetiFrame1280x720
 		case iframe1280x720
 	}
+    
+    /// Enumeration for camera video source and look/feel
+    
+    public enum CameraStyle {
+        
+        /// Snapchat style full screen video
+        case snapchat
+        
+        /// iOS style 4:3 high resolution photo mode
+        case ios
+    }
 
 	/**
 
@@ -92,6 +103,10 @@ open class SwiftyCamViewController: UIViewController {
 	/// Public Camera Delegate for the Custom View Controller Subclass
 
 	public weak var cameraDelegate: SwiftyCamViewControllerDelegate?
+    
+    /// Sets the camera style
+    
+    public var cameraStyle : CameraStyle         = .snapchat
 
 	/// Maxiumum video duration if SwiftyCamButton is used
 
@@ -255,8 +270,10 @@ open class SwiftyCamViewController: UIViewController {
 
 	override open func viewDidLoad() {
 		super.viewDidLoad()
-        view = PreviewView(frame: view.frame, videoGravity: videoGravity)
-		previewLayer = view as! PreviewView!
+        view.backgroundColor = UIColor.black
+        
+		previewLayer = PreviewView(frame: view.frame, videoGravity: videoGravity)
+        view.addSubview(previewLayer)
 
 		// Add Gesture Recognizers
         
@@ -299,8 +316,6 @@ open class SwiftyCamViewController: UIViewController {
     private func updatePreviewLayer(layer: AVCaptureConnection, orientation: AVCaptureVideoOrientation) {
         
         layer.videoOrientation = orientation
-        
-        previewLayer.frame = self.view.bounds
         
     }
     
@@ -348,6 +363,8 @@ open class SwiftyCamViewController: UIViewController {
 
 	override open func viewDidAppear(_ animated: Bool) {
 		super.viewDidAppear(animated)
+        
+        configurePreview()
 
 		// Subscribe to device rotation notifications
 
@@ -410,6 +427,38 @@ open class SwiftyCamViewController: UIViewController {
 	}
 
 	// MARK: Public Functions
+    
+    /**
+     
+     Setup preview layer based on camera style
+     
+     Add gesture recognizer and move view to background
+     
+     */
+    
+    public func configurePreview() {
+        
+        switch cameraStyle {
+            
+        case .snapchat:
+            previewLayer.frame = self.view.frame
+            
+        case .ios:
+            let viewSize = self.view.frame.size
+            let previewHeight = (viewSize.height - (viewSize.height / 4))
+            let statusSize = UIApplication.shared.statusBarFrame.size.height
+            
+            previewLayer.frame = CGRect(x: 0, y: statusSize, width: viewSize.width, height: previewHeight)
+        }
+        
+        addGestureRecognizers()
+        
+        // add view, move to back & set session
+        
+        self.view.addSubview(previewLayer)
+        view.sendSubview(toBack: previewLayer)
+        previewLayer.session = session
+    }
 
 	/**
 
@@ -631,15 +680,23 @@ open class SwiftyCamViewController: UIViewController {
 
 	fileprivate func configureVideoPreset() {
 
-		if currentCamera == .front {
-			session.sessionPreset = videoInputPresetFromVideoQuality(quality: .high)
-		} else {
-			if session.canSetSessionPreset(videoInputPresetFromVideoQuality(quality: videoQuality)) {
-				session.sessionPreset = videoInputPresetFromVideoQuality(quality: videoQuality)
-			} else {
-				session.sessionPreset = videoInputPresetFromVideoQuality(quality: .high)
-			}
-		}
+        if currentCamera == .front {
+            session.sessionPreset = videoInputPresetFromVideoQuality(quality: .high)
+        } else {
+            
+            switch cameraStyle {
+                
+            case .snapchat:
+                if session.canSetSessionPreset(videoInputPresetFromVideoQuality(quality: videoQuality)) {
+                    session.sessionPreset = videoInputPresetFromVideoQuality(quality: videoQuality)
+                } else {
+                    session.sessionPreset = videoInputPresetFromVideoQuality(quality: .high)
+                }
+                
+            case .ios:
+                session.sessionPreset = AVCaptureSessionPresetPhoto
+            }
+        }
 	}
 
 	/// Add Video Inputs

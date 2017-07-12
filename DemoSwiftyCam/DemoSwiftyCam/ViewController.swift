@@ -29,6 +29,8 @@ class ViewController: SwiftyCamViewController, SwiftyCamViewControllerDelegate {
         shouldUseDeviceOrientation = true
         allowAutoRotate = true
         audioEnabled = true
+        // Changed the camera preset to iOS camera style. Set to .snapchat or remove to use default style.
+        cameraStyle = .ios
 		addButtons()
 	}
 
